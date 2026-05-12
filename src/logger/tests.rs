@@ -2,7 +2,7 @@ mod tests {
     use crate::logger::{Logger, level::Level};
 
     const NAME: &str = "LoggerName";
-    const LEVEL: &Level = &Level::INFO;
+    const LEVEL: Level = Level::INFO;
 
     fn initialize_logger() -> Logger {
         Logger::new(NAME, LEVEL)
@@ -19,7 +19,7 @@ mod tests {
     fn test_02_test_set_level() {
         let new_level = Level::CRITICAL;
         let mut logger = initialize_logger();
-        logger.set_level(&new_level);
+        logger.set_level(new_level);
         assert_eq!(*logger.get_level(), new_level);
     }
 

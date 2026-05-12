@@ -16,10 +16,10 @@ pub struct Logger {
 }
 
 impl Logger {
-    pub fn new(name: &str, level: &Level) -> Self {
+    pub fn new(name: &str, level: Level) -> Self {
         Self {
             name: name.to_string(),
-            level: *level,
+            level,
             sinks: vec![Box::new(StdOutSink::default())],
         }
     }
@@ -32,8 +32,8 @@ impl Logger {
         &self.level
     }
 
-    pub fn set_level(&mut self, level: &Level) {
-        self.level = *level
+    pub fn set_level(&mut self, level: Level) {
+        self.level = level
     }
 
     pub fn is_level_enabled(&self, level: Level) -> bool {
@@ -41,27 +41,27 @@ impl Logger {
     }
 
     pub fn debug(&self, message: &str) {
-        self.log(message, &Level::DEBUG);
+        self.log(message, Level::DEBUG);
     }
 
     pub fn info(&self, message: &str) {
-        self.log(message, &Level::INFO);
+        self.log(message, Level::INFO);
     }
 
     pub fn warning(&self, message: &str) {
-        self.log(message, &Level::WARNING);
+        self.log(message, Level::WARNING);
     }
 
     pub fn error(&self, message: &str) {
-        self.log(message, &Level::ERROR);
+        self.log(message, Level::ERROR);
     }
 
     pub fn critical(&self, message: &str) {
-        self.log(message, &Level::CRITICAL);
+        self.log(message, Level::CRITICAL);
     }
 
-    fn log(&self, message: &str, level: &Level) {
-        if self.is_level_enabled(*level) {
+    fn log(&self, message: &str, level: Level) {
+        if self.is_level_enabled(level) {
             for sink in &self.sinks {
                 sink.as_ref().sink_message(message, &self.name, level);
             }
