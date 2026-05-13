@@ -46,13 +46,12 @@ where
     pub fn load(file_path: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         let content = fs::read_to_string(file_path)?;
         Ok(Self {
-            value: serde_yaml::from_str(&content)?,
+            value: YamlSerializer::deserialize(&content)?,
         })
     }
 
     pub fn save(&self, file_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-        let content = YamlSerializer::serialize(&self.value)
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let content = YamlSerializer::serialize(&self.value)?;
         fs::write(file_path, content)?;
         Ok(())
     }
