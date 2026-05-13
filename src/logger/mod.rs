@@ -7,7 +7,7 @@ mod tests;
 
 use crate::logger::{
     level::Level,
-    sink::{Sink, StdOutSink},
+    sink::{Sink, stdout::StdoutSink},
 };
 
 pub struct Logger {
@@ -21,8 +21,16 @@ impl Logger {
         Self {
             name: name.to_string(),
             level,
-            sinks: vec![Box::new(StdOutSink::default())],
+            sinks: vec![Box::new(StdoutSink::new(level))],
         }
+    }
+
+    pub fn get_sinks(&self) -> &Vec<Box<dyn Sink>> {
+        self.sinks.as_ref()
+    }
+
+    pub fn set_sinks(&mut self, sinks: Vec<Box<dyn Sink>>) {
+        self.sinks = sinks;
     }
 
     pub fn get_name(&self) -> &str {
