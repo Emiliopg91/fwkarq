@@ -2,7 +2,7 @@ use chrono::Local;
 
 use crate::logger::level::Level;
 
-pub trait Sink {
+pub trait Sink: Send + Sync {
     fn sink_message(&self, msg: &str, name: &str, level: Level);
     fn format_message(&self, message: &str, name: &str, level: Level) -> String {
         format!(

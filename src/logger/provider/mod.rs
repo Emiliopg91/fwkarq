@@ -1,0 +1,55 @@
+#[cfg(test)]
+mod tests;
+
+use crate::logger::{Logger, level::Level};
+use std::{
+    collections::HashMap,
+    sync::{Arc, OnceLock, RwLock},
+};
+
+struct Provider {
+    default_level: Level,
+    logger_map: HashMap<String, Arc<Logger>>,
+}
+
+static PROVIDER: OnceLock<RwLock<Provider>> = OnceLock::new();
+
+impl Provider {
+    fn new() -> Self {
+        Self {
+            default_level: Level::INFO,
+            logger_map: HashMap::new(),
+        }
+    }
+
+    fn _get_logger(&mut self, logger_name: &str) -> Arc<Logger> {
+        self.logger_map
+            .entry(logger_name.to_string())
+            .or_insert_with(|| Arc::new(Logger::new(logger_name, self.default_level)))
+            .clone()
+    }
+
+    pub fn get_logger(logger_name: &str) -> Arc<Logger> {
+        PROVIDER
+            .get_or_init(|| RwLock::new(Provider::new()))
+            .write()
+            .unwrap()
+            ._get_logger(logger_name)
+    }
+
+    pub fn get_level() -> Level {
+        PROVIDER
+            .get_or_init(|| RwLock::new(Provider::new()))
+            .write()
+            .unwrap()
+            .default_level
+    }
+
+    pub fn set_level(level: Level) {
+        PROVIDER
+            .get_or_init(|| RwLock::new(Provider::new()))
+            .write()
+            .unwrap()
+            .default_level = level;
+    }
+}

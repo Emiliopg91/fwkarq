@@ -11,7 +11,7 @@ mod tests {
     #[test]
     fn test_01_test_constructor() {
         let logger = initialize_logger();
-        assert_eq!(*logger.get_level(), LEVEL);
+        assert_eq!(logger.get_level(), LEVEL);
         assert_eq!(logger.get_name(), NAME);
     }
 
@@ -20,7 +20,7 @@ mod tests {
         let new_level = Level::CRITICAL;
         let mut logger = initialize_logger();
         logger.set_level(new_level);
-        assert_eq!(*logger.get_level(), new_level);
+        assert_eq!(logger.get_level(), new_level);
     }
 
     #[test]

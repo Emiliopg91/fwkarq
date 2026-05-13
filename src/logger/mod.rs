@@ -1,4 +1,5 @@
 pub mod level;
+pub mod provider;
 pub mod sink;
 
 #[cfg(test)]
@@ -28,8 +29,8 @@ impl Logger {
         self.name.as_ref()
     }
 
-    pub fn get_level(&self) -> &Level {
-        &self.level
+    pub fn get_level(&self) -> Level {
+        self.level
     }
 
     pub fn set_level(&mut self, level: Level) {
