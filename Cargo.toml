@@ -5,6 +5,12 @@ edition = "2024"
 
 [dependencies]
 chrono = "0.4.44"
+serde = "1.0.228"
+serde_derive = "1.0.228"
+serde_yaml = "0.9.34"
+
+[dev-dependencies]
+uuid = { version = "1", features = ["v4"] }
 
 [lib]
 doctest = false

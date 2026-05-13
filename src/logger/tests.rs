@@ -11,7 +11,7 @@ mod tests {
     #[test]
     fn test_01_test_constructor() {
         let logger = initialize_logger();
-        assert_eq!(logger.get_level(), LEVEL);
+        assert_eq!(*logger.get_level(), LEVEL);
         assert_eq!(logger.get_name(), NAME);
     }
 
@@ -29,7 +29,5 @@ mod tests {
         assert!(logger.is_level_enabled(Level::CRITICAL));
         assert!(logger.is_level_enabled(logger.level));
         assert!(!logger.is_level_enabled(Level::DEBUG));
-
-        logger.critical("ASDRF");
     }
 }
