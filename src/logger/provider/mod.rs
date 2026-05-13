@@ -7,7 +7,7 @@ use std::{
     sync::{Arc, OnceLock, RwLock},
 };
 
-struct Provider {
+pub struct Provider {
     default_level: Level,
     logger_map: HashMap<String, Arc<Logger>>,
 }

@@ -7,7 +7,7 @@ use serde::{Serialize, de::DeserializeOwned};
 
 use crate::serialization::error::SerializationError;
 
-trait Serializer {
+pub trait Serializer {
     fn serialize<T: Serialize>(obj: &T) -> Result<String, SerializationError>;
     fn deserialize<T: DeserializeOwned>(string: &str) -> Result<T, SerializationError>;
 }

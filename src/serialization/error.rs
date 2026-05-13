@@ -30,7 +30,7 @@ impl Display for SerializationError {
             message.push_str(&format!(". Caused by: {}", err));
         }
 
-        write!(f, "{}", message);
+        write!(f, "{}", message)?;
 
         Ok(())
     }

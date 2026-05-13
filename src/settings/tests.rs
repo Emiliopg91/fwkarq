@@ -31,7 +31,7 @@ mod tests {
 
     #[test]
     fn test_01_check_constructor() {
-        Settings::<ConfigBean>::new();
+        Settings::<ConfigBean>::default();
     }
 
     #[test]
@@ -48,7 +48,7 @@ name: Name
 
     #[test]
     fn test_03_check_saves() {
-        let mut settings = Settings::<ConfigBean>::new();
+        let mut settings = Settings::<ConfigBean>::default();
         settings.set_age(18);
         settings.set_name("Name");
 

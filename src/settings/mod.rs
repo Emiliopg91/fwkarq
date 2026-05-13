@@ -9,6 +9,9 @@ use std::{
 
 use serde::{Serialize, de::DeserializeOwned};
 
+use crate::serialization::{Serializer, YamlSerializer};
+
+#[derive(Default)]
 pub struct Settings<T>
 where
     T: Default + Serialize + DeserializeOwned,
@@ -40,12 +43,6 @@ impl<T> Settings<T>
 where
     T: Default + Serialize + DeserializeOwned,
 {
-    pub fn new() -> Self {
-        Self {
-            value: T::default(),
-        }
-    }
-
     pub fn load(file_path: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         let content = fs::read_to_string(file_path)?;
         Ok(Self {
@@ -54,7 +51,8 @@ where
     }
 
     pub fn save(&self, file_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-        let content = serde_yaml::to_string(&self.value)?;
+        let content = YamlSerializer::serialize(&self.value)
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         fs::write(file_path, content)?;
         Ok(())
     }
