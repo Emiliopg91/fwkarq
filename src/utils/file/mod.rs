@@ -1,4 +1,8 @@
+pub mod errors;
+
 use std::{fs, io, path::Path};
+
+use crate::utils::file::errors::{FileError, Result};
 
 pub struct FileUtils;
 
@@ -24,18 +28,76 @@ impl FileUtils {
         path.as_ref().is_dir()
     }
 
-    pub fn write<T, I>(path: T, content: I) -> io::Result<()>
+    pub fn delete<T>(path: T) -> Result<()>
+    where
+        T: AsRef<Path>,
+    {
+        let path = path.as_ref();
+
+        type RemoveFn = fn(&Path) -> io::Result<()>;
+        let fn_pointer: Option<RemoveFn> = if path.is_file() {
+            Some(|p| fs::remove_file(p))
+        } else if path.is_dir() {
+            Some(|p| fs::remove_dir_all(p))
+        } else {
+            None
+        };
+
+        if let Some(f) = fn_pointer {
+            f(path).map_err(|e| FileError::FileDeletionError(path.to_path_buf(), e))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn touch<T>(path: T) -> Result<()>
+    where
+        T: AsRef<Path>,
+    {
+        let path = path.as_ref();
+        if !Self::exists(path) {
+            let _ = fs::File::create_new(path)
+                .map_err(|e| FileError::FileTouchError(path.to_path_buf(), e));
+        } else {
+            filetime::set_file_mtime(path, filetime::FileTime::now())
+                .map_err(|e| FileError::FileTouchError(path.to_path_buf(), e))?
+        }
+
+        Ok(())
+    }
+
+    pub fn mkdir<T>(path: T, parents: bool) -> Result<()>
+    where
+        T: AsRef<Path>,
+    {
+        type MkDirFn = fn(&Path) -> io::Result<()>;
+        let fn_pointer: Option<MkDirFn> = if parents {
+            Some(|p| fs::create_dir_all(p))
+        } else {
+            Some(|p| fs::create_dir(p))
+        };
+
+        if let Some(f) = fn_pointer {
+            f(path.as_ref()).map_err(|e| FileError::MakeDirError(path.as_ref().to_path_buf(), e))?
+        }
+
+        Ok(())
+    }
+
+    pub fn write<T, I>(path: T, content: I) -> Result<()>
     where
         T: AsRef<Path>,
         I: AsRef<[u8]>,
     {
-        fs::write(path, content.as_ref())
+        fs::write(path.as_ref(), content.as_ref())
+            .map_err(|e| FileError::FileWriteError(path.as_ref().to_path_buf(), e))
     }
 
-    pub fn read<T>(path: T) -> io::Result<String>
+    pub fn read<T>(path: T) -> Result<String>
     where
         T: AsRef<Path>,
     {
-        fs::read_to_string(path)
+        fs::read_to_string(path.as_ref())
+            .map_err(|e| FileError::FileReadError(path.as_ref().to_path_buf(), e))
     }
 }

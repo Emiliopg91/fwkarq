@@ -1,15 +1,18 @@
 #[cfg(test)]
 mod tests;
 
+pub mod errors;
+
 use std::{
     ops::{Deref, DerefMut},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
-    serialization::{Serializer, YamlSerializer},
+    serialization::{Serializer, yaml::YamlSerializer},
+    settings::errors::{Result, SettingsError},
     utils::file::FileUtils,
 };
 
@@ -45,16 +48,24 @@ impl<T> Settings<T>
 where
     T: Default + Serialize + DeserializeOwned,
 {
-    pub fn load(file_path: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        let content = FileUtils::read(file_path)?;
+    pub fn load(file_path: &PathBuf) -> Result<Self> {
+        let content = FileUtils::read(file_path)
+            .map_err(|e| SettingsError::LoadError(file_path.to_path_buf(), Box::new(e)))?;
         Ok(Self {
-            value: YamlSerializer::deserialize(&content)?,
+            value: YamlSerializer::deserialize(&content)
+                .map_err(|e| SettingsError::LoadError(file_path.to_path_buf(), Box::new(e)))?,
         })
     }
 
-    pub fn save(&self, file_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-        let content = YamlSerializer::serialize(&self.value)?;
-        FileUtils::write(file_path, content)?;
+    pub fn save<P>(&self, file_path: P) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        let file_path = file_path.as_ref();
+        let content = YamlSerializer::serialize(&self.value)
+            .map_err(|e| SettingsError::SaveError(file_path.to_path_buf(), Box::new(e)))?;
+        FileUtils::write(file_path, content)
+            .map_err(|e| SettingsError::SaveError(file_path.to_path_buf(), Box::new(e)))?;
         Ok(())
     }
 }

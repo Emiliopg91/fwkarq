@@ -1,5 +1,6 @@
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
+use std::path::Path;
 use std::sync::Mutex;
 
 use crate::logger::level::Level;
@@ -11,17 +12,16 @@ pub struct FileSink {
 }
 
 impl FileSink {
-    pub fn new(path: &str, level: Level) -> std::io::Result<Self> {
+    pub fn new<T>(path: T, level: Level) -> std::io::Result<Self>
+    where
+        T: AsRef<Path>,
+    {
         let file = OpenOptions::new().create(true).append(true).open(path)?;
 
         Ok(Self {
             writer: Mutex::new(BufWriter::new(file)),
             level,
         })
-    }
-
-    fn format_message(&self, msg: &str, name: &str, level: Level) -> String {
-        format!("[{:?}] {} - {}", level, name, msg)
     }
 }
 

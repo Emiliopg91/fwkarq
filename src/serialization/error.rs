@@ -35,3 +35,5 @@ impl Display for SerializationError {
         Ok(())
     }
 }
+
+pub type SerializationResult<T> = std::result::Result<T, SerializationError>;

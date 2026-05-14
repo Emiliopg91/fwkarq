@@ -3,7 +3,7 @@ mod tests {
 
     use serde_derive::{Deserialize, Serialize};
 
-    use crate::serialization::{JsonSerializer, Serializer, YamlSerializer};
+    use crate::serialization::{Serializer, json::JsonSerializer, yaml::YamlSerializer};
 
     #[derive(Serialize, Deserialize, Default)]
     struct ConfigBean {
