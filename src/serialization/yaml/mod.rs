@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::serialization::{

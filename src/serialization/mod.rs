@@ -1,8 +1,6 @@
-#[cfg(test)]
-mod tests;
-
 pub mod error;
 pub mod json;
+pub mod toml;
 pub mod yaml;
 
 use serde::{Serialize, de::DeserializeOwned};

@@ -8,16 +8,16 @@ use crate::serialization::{
     error::{SerializationError, SerializationResult},
 };
 
-pub struct JsonSerializer;
+pub struct TomlSerializer;
 
-impl Serializer for JsonSerializer {
+impl Serializer for TomlSerializer {
     fn deserialize<T: DeserializeOwned>(string: &str) -> SerializationResult<T> {
-        serde_json::from_str(string)
-            .map_err(|e| SerializationError::UnmarshallError("JSON".to_string(), Some(Box::new(e))))
+        toml::from_str(string)
+            .map_err(|e| SerializationError::UnmarshallError("TOML".to_string(), Some(Box::new(e))))
     }
 
     fn serialize<T: Serialize>(obj: &T) -> SerializationResult<String> {
-        serde_json::to_string_pretty(obj)
-            .map_err(|e| SerializationError::MarshallError("JSON".to_string(), Some(Box::new(e))))
+        toml::to_string(obj)
+            .map_err(|e| SerializationError::MarshallError("TOML".to_string(), Some(Box::new(e))))
     }
 }
