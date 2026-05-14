@@ -2,14 +2,16 @@
 mod tests;
 
 use std::{
-    fs,
     ops::{Deref, DerefMut},
     path::PathBuf,
 };
 
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::serialization::{Serializer, YamlSerializer};
+use crate::{
+    serialization::{Serializer, YamlSerializer},
+    utils::file::FileUtils,
+};
 
 #[derive(Default)]
 pub struct Settings<T>
@@ -44,7 +46,7 @@ where
     T: Default + Serialize + DeserializeOwned,
 {
     pub fn load(file_path: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        let content = fs::read_to_string(file_path)?;
+        let content = FileUtils::read(file_path)?;
         Ok(Self {
             value: YamlSerializer::deserialize(&content)?,
         })
@@ -52,7 +54,7 @@ where
 
     pub fn save(&self, file_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
         let content = YamlSerializer::serialize(&self.value)?;
-        fs::write(file_path, content)?;
+        FileUtils::write(file_path, content)?;
         Ok(())
     }
 }
