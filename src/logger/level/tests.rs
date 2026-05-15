@@ -45,5 +45,5 @@ fn test_02_parse_valid_level_lowercase() {
 fn test_03_level_to_string() {
     LEVELS
         .iter()
-        .for_each(|(level, literal)| assert!(level.to_string() == literal.to_string()));
+        .for_each(|(level, literal)| assert!(level.to_string() == *literal));
 }

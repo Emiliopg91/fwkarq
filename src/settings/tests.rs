@@ -39,7 +39,7 @@ fn test_02_check_load() {
     let content = r#"age: 18
 name: Name
 "#;
-    fs::write(&tmp, &content).unwrap();
+    fs::write(&tmp, content).unwrap();
     let settings = Settings::<ConfigBean>::load(&tmp).unwrap();
     assert!(settings.age() == 18);
     assert!(settings.name() == "Name");
