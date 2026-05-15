@@ -18,6 +18,7 @@ pub struct Logger {
     name: String,
     level: Level,
     sinks: Vec<Box<dyn Sink>>,
+    pattern_orig: String,
     pattern: String,
     token_fn: Vec<TokenFn>,
 }
@@ -26,7 +27,7 @@ impl Logger {
     pub fn new(name: &str, level: Level, pattern: &str) -> Self {
         let mut chars = pattern.chars().peekable();
         let mut token_fn: Vec<TokenFn> = Vec::new();
-        let mut pattern = String::new();
+        let mut pattern_fmt = String::new();
 
         while let Some(c) = chars.next() {
             if c == '%' {
@@ -34,7 +35,7 @@ impl Logger {
                     Some('%') => {
                         // Escaped %
                         chars.next();
-                        pattern.push('%');
+                        pattern_fmt.push('%');
                     }
                     Some(next) => {
                         let func: Option<TokenFn> = match next {
@@ -48,25 +49,26 @@ impl Logger {
                         };
                         match func {
                             Some(f) => {
-                                pattern.push_str(&format!("{{{}}}", token_fn.len()));
+                                pattern_fmt.push_str(&format!("{{{}}}", token_fn.len()));
                                 token_fn.push(f);
                                 chars.next();
                             }
-                            None => pattern.push(*next),
+                            None => pattern_fmt.push(*next),
                         }
                     }
                     None => {
-                        pattern.push('%');
+                        pattern_fmt.push('%');
                     }
                 }
             } else {
-                pattern.push(c);
+                pattern_fmt.push(c);
             }
         }
 
         Self {
             name: name.to_string(),
-            pattern,
+            pattern_orig: pattern.to_string(),
+            pattern: pattern_fmt,
             token_fn,
             level,
             sinks: vec![Box::new(StdoutSink::new(level))],
@@ -83,6 +85,10 @@ impl Logger {
 
     pub fn get_name(&self) -> &str {
         self.name.as_ref()
+    }
+
+    pub fn get_pattern(&self) -> &str {
+        self.pattern_orig.as_ref()
     }
 
     pub fn get_level(&self) -> Level {

@@ -61,6 +61,15 @@ impl Provider {
             .default_level = level;
     }
 
+    pub fn get_pattern() -> String {
+        PROVIDER
+            .get_or_init(|| RwLock::new(Provider::new()))
+            .write()
+            .unwrap()
+            .default_pattern
+            .clone()
+    }
+
     pub fn set_pattern(pattern: &str) {
         PROVIDER
             .get_or_init(|| RwLock::new(Provider::new()))

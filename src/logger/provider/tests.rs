@@ -20,3 +20,17 @@ fn test_02_level_management() {
     assert!(Provider::get_logger(LOGGER_NAME1).get_level() == def_level);
     assert!(Provider::get_logger(LOGGER_NAME2).get_level() == NEW_LEVEL);
 }
+
+#[test]
+fn test_03_pattern_management() {
+    const LOGGER_NAME1: &str = "LoggerName1";
+    const LOGGER_NAME2: &str = "LoggerName3";
+    const NEW_PATTERN: &str = "%m";
+    let def_pattern = Provider::get_pattern();
+
+    assert!(Provider::get_logger(LOGGER_NAME1).get_pattern() == def_pattern);
+
+    Provider::set_pattern(NEW_PATTERN);
+    assert!(Provider::get_logger(LOGGER_NAME1).get_pattern() == def_pattern);
+    assert!(Provider::get_logger(LOGGER_NAME2).get_pattern() == NEW_PATTERN);
+}
