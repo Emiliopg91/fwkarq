@@ -4,7 +4,7 @@ const NAME: &str = "LoggerName";
 const LEVEL: Level = Level::INFO;
 
 fn initialize_logger() -> Logger {
-    Logger::new(NAME, LEVEL)
+    Logger::new(NAME, LEVEL, "[%d][%n][%l] - %m")
 }
 
 #[test]

@@ -26,14 +26,12 @@ impl FileSink {
 }
 
 impl Sink for FileSink {
-    fn sink_message(&self, msg: &str, name: &str, level: Level) {
-        if level >= self.level {
-            let line = self.format_message(msg, name, level);
-
-            if let Ok(mut writer) = self.writer.lock() {
-                let _ = writeln!(writer, "{}", line);
-                let _ = writer.flush();
-            }
+    fn sink_message(&self, msg: &str, level: Level) {
+        if level >= self.level
+            && let Ok(mut writer) = self.writer.lock()
+        {
+            let _ = writeln!(writer, "{}", msg);
+            let _ = writer.flush();
         }
     }
 }

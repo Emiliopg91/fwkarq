@@ -21,13 +21,9 @@ impl StdoutSink {
 }
 
 impl Sink for StdoutSink {
-    fn sink_message(&self, msg: &str, name: &str, level: Level) {
+    fn sink_message(&self, msg: &str, level: Level) {
         if level >= self.level {
-            let msg = &format!(
-                "\x1b[{}{}\x1b[0m",
-                self.get_color(level),
-                self.format_message(msg, name, level)
-            );
+            let msg = &format!("\x1b[{}{}\x1b[0m", self.get_color(level), msg);
             if level < Level::ERROR {
                 println!("{}", msg)
             } else {
