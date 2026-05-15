@@ -5,19 +5,23 @@ use serde::{Serialize, de::DeserializeOwned};
 
 use crate::serialization::{
     Serializer,
-    error::{SerializationError, SerializationResult},
+    error::{SerializationError, Result},
 };
 
 pub struct JsonSerializer;
 
 impl Serializer for JsonSerializer {
-    fn deserialize<T: DeserializeOwned>(string: &str) -> SerializationResult<T> {
+    fn deserialize<T: DeserializeOwned>(string: &str) -> Result<T> {
         serde_json::from_str(string)
-            .map_err(|e| SerializationError::UnmarshallError("JSON".to_string(), Box::new(e)))
+            .map_err(|e| SerializationError::UnmarshallError(Self::get_type(), Box::new(e)))
     }
 
-    fn serialize<T: Serialize>(obj: &T) -> SerializationResult<String> {
+    fn serialize<T: Serialize>(obj: &T) -> Result<String> {
         serde_json::to_string_pretty(obj)
-            .map_err(|e| SerializationError::MarshallError("JSON".to_string(), Box::new(e)))
+            .map_err(|e| SerializationError::MarshallError(Self::get_type(), Box::new(e)))
+    }
+
+    fn get_type() -> String {
+        "JSON".to_string()
     }
 }

@@ -5,7 +5,7 @@ pub mod errors;
 
 use std::{env, ffi::OsStr, path::Path, process::Command, time::Instant};
 
-use crate::shell::errors::{ShellError, ShellResult};
+use crate::shell::errors::{Result, ShellError};
 
 pub struct ShellOutput {
     pub status: i32,
@@ -19,7 +19,7 @@ pub struct Shell {
 }
 
 impl Shell {
-    fn run_command(command: &mut Command, raise_if_not_0: bool) -> ShellResult<ShellOutput> {
+    fn run_command(command: &mut Command, raise_if_not_0: bool) -> Result<ShellOutput> {
         let mut cmd = command.get_program().to_string_lossy().to_string();
         if command.get_args().len() > 0 {
             cmd = format!(
@@ -59,7 +59,7 @@ impl Shell {
         })
     }
 
-    pub fn check_program_exists<T>(program: T) -> ShellResult<()>
+    pub fn check_program_exists<T>(program: T) -> Result<()>
     where
         T: AsRef<OsStr>,
     {
@@ -69,7 +69,7 @@ impl Shell {
         Ok(())
     }
 
-    pub fn command<T>(program: T) -> ShellResult<Self>
+    pub fn command<T>(program: T) -> Result<Self>
     where
         T: AsRef<OsStr>,
     {
@@ -128,7 +128,7 @@ impl Shell {
         self
     }
 
-    pub fn run(&mut self, err_if_status_non_0: bool) -> ShellResult<ShellOutput> {
+    pub fn run(&mut self, err_if_status_non_0: bool) -> Result<ShellOutput> {
         Self::run_command(&mut self.command, err_if_status_non_0)
     }
 }

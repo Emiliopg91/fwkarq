@@ -7,3 +7,6 @@ test:
 
 lint:
 	@cargo clippy --all-targets
+
+update:
+	@cargo update

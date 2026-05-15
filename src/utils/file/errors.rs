@@ -14,6 +14,10 @@ pub enum FileError {
     FileWriteError(PathBuf, std::io::Error),
     #[error("Could not read content from {0}:\n  {1}")]
     FileReadError(PathBuf, std::io::Error),
+    #[error("Could not create tmp file:\n  {0}")]
+    TmpFileError(std::io::Error),
+    #[error("Could not open file '{0}':\n  {1}")]
+    OpenFileError(String, std::io::Error),
 }
 
 pub type Result<T> = std::result::Result<T, FileError>;

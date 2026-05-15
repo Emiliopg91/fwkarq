@@ -1,6 +1,16 @@
+#[cfg(test)]
+pub mod tests;
+
 pub mod errors;
 
-use std::{fs, io, path::Path};
+use std::{
+    env,
+    fs::{self, File, OpenOptions},
+    io,
+    ops::Add,
+    path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use crate::utils::file::errors::{FileError, Result};
 
@@ -99,5 +109,53 @@ impl FileUtils {
     {
         fs::read_to_string(path.as_ref())
             .map_err(|e| FileError::FileReadError(path.as_ref().to_path_buf(), e))
+    }
+
+    pub fn open_file<T>(
+        path: &T,
+        create: bool,
+        read: bool,
+        write: bool,
+        append: bool,
+    ) -> Result<File>
+    where
+        T: AsRef<Path> + ?Sized,
+    {
+        OpenOptions::new()
+            .create_new(create)
+            .read(read)
+            .write(write)
+            .append(write && append)
+            .truncate(write && !append)
+            .open(path)
+            .map_err(|e| FileError::OpenFileError(path.as_ref().display().to_string(), e))
+    }
+
+    pub fn new_tmp_file(read: bool, write: bool) -> Result<(PathBuf, File)> {
+        let app_name = env!("CARGO_PKG_NAME");
+        let tmp_path = env::temp_dir();
+        let mut now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+
+        loop {
+            let random_suffix = (now as u64) ^ (now as u64).wrapping_mul(6364136223846793005);
+            let path_str = &format!("{}/{}_{}", tmp_path.display(), app_name, random_suffix);
+            let path = Path::new(path_str);
+            match OpenOptions::new()
+                .read(read)
+                .write(write)
+                .create_new(true)
+                .open(path)
+            {
+                Ok(file) => return Ok((path.to_path_buf(), file)),
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                    now = now.add(1);
+                    continue;
+                }
+                Err(e) => return Err(FileError::TmpFileError(e)),
+            }
+        }
     }
 }

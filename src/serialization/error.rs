@@ -8,4 +8,4 @@ pub enum SerializationError {
     UnmarshallError(String, Box<dyn std::error::Error>),
 }
 
-pub type SerializationResult<T> = std::result::Result<T, SerializationError>;
+pub type Result<T> = std::result::Result<T, SerializationError>;

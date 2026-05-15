@@ -14,4 +14,4 @@ pub enum ShellError {
     CommandNotFound(String),
 }
 
-pub type ShellResult<T> = std::result::Result<T, ShellError>;
+pub type Result<T> = std::result::Result<T, ShellError>;
