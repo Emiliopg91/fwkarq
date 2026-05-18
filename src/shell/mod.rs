@@ -3,9 +3,19 @@ mod tests;
 
 pub mod errors;
 
-use std::{env, ffi::OsStr, path::Path, process::Command, time::Instant};
+use std::{
+    env,
+    ffi::OsStr,
+    path::Path,
+    process::Command,
+    sync::{Arc, LazyLock},
+    time::Instant,
+};
 
-use crate::shell::errors::{Result, ShellError};
+use crate::{
+    logger::{Logger, provider::Provider},
+    shell::errors::{Result, ShellError},
+};
 
 pub struct ShellOutput {
     pub status: i32,
@@ -13,6 +23,8 @@ pub struct ShellOutput {
     pub stderr: String,
     pub elapsed: u128,
 }
+
+static LOGGER: LazyLock<Arc<Logger>> = LazyLock::new(|| Provider::get_logger("Shell"));
 
 pub struct Shell {
     command: Command,
@@ -33,6 +45,7 @@ impl Shell {
             );
         }
 
+        LOGGER.info(format!("Running command {}...", cmd));
         let t0 = Instant::now();
         let res = command
             .output()
@@ -44,6 +57,11 @@ impl Shell {
         }
 
         let status = res.status.code().unwrap();
+        LOGGER.info(format!(
+            "Execution finished after {:.3} with status {}",
+            elapsed, status
+        ));
+
         if status != 0 && raise_if_not_0 {
             return Err(ShellError::NonZeroStatus(cmd, status));
         }

@@ -1,7 +1,7 @@
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
-use std::sync::mpsc::{self, Sender};
+use std::sync::mpsc::{self, SyncSender};
 use std::thread::{self, JoinHandle};
 
 use crate::logger::level::Level;
@@ -9,7 +9,7 @@ use crate::logger::sink::Sink;
 
 pub struct FileSink {
     level: Level,
-    tx: Option<Sender<String>>,
+    tx: Option<SyncSender<String>>,
     worker: Option<JoinHandle<()>>,
 }
 
@@ -18,16 +18,20 @@ impl FileSink {
     where
         T: AsRef<Path>,
     {
-        let file = OpenOptions::new().create(true).append(true).open(path)?;
+        let file = OpenOptions::new().create(true).append(true).open(&path)?;
 
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = mpsc::sync_channel(100);
         let tx = Some(tx);
 
+        let path = path.as_ref().to_owned();
         let worker = Some(thread::spawn(move || {
             let mut writer = BufWriter::new(file);
             while let Ok(msg) = rx.recv() {
-                let _ = writeln!(writer, "{}", msg);
-                let _ = writer.flush();
+                if let Err(e) = writeln!(writer, "{}", msg) {
+                    eprintln!("Error writing log to {}:\n  {}", path.display(), e)
+                } else {
+                    let _ = writer.flush();
+                }
             }
         }));
 

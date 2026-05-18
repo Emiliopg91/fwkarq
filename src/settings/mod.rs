@@ -5,7 +5,7 @@ pub mod errors;
 
 use std::{
     ops::{Deref, DerefMut},
-    path::{Path, PathBuf},
+    path::Path,
     sync::{Arc, LazyLock},
 };
 
@@ -52,8 +52,12 @@ impl<T> Settings<T>
 where
     T: Default + Serialize + DeserializeOwned,
 {
-    pub fn load(file_path: &PathBuf) -> Result<Self> {
-        LOGGER.info(format!("Loading settings from {}", file_path.display()));
+    pub fn load<P>(file_path: &P) -> Result<Self>
+    where
+        P: AsRef<Path>,
+    {
+        let file_path = file_path.as_ref();
+        LOGGER.info(format!("Loading settings from {}...", file_path.display()));
         let content = FileUtils::read(file_path)
             .map_err(|e| SettingsError::LoadError(file_path.to_path_buf(), Box::new(e)))?;
         Ok(Self {
@@ -62,11 +66,12 @@ where
         })
     }
 
-    pub fn save<P>(&self, file_path: P) -> Result<()>
+    pub fn save<P>(&self, file_path: &P) -> Result<()>
     where
         P: AsRef<Path>,
     {
         let file_path = file_path.as_ref();
+        LOGGER.info(format!("Saving settings to {}...", file_path.display()));
         let content = YamlSerializer::serialize(&self.value)
             .map_err(|e| SettingsError::SaveError(file_path.to_path_buf(), Box::new(e)))?;
         FileUtils::write(file_path, content)

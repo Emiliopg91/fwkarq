@@ -9,7 +9,7 @@ impl StdoutSink {
         Self { level }
     }
 
-    fn get_color(&self, level: Level) -> String {
+    fn get_color(level: Level) -> String {
         match level {
             Level::DEBUG => "36m".to_string(),
             Level::INFO => "32m".to_string(),
@@ -23,7 +23,7 @@ impl StdoutSink {
 impl Sink for StdoutSink {
     fn sink_message(&self, msg: &str, level: Level) {
         if level >= self.level {
-            let msg = &format!("\x1b[{}{}\x1b[0m", self.get_color(level), msg);
+            let msg = format!("\x1b[{}{}\x1b[0m", Self::get_color(level), msg);
             if level < Level::ERROR {
                 println!("{}", msg)
             } else {

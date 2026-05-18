@@ -1,4 +1,7 @@
 test:
+	@RUST_BACKTRACE=1 cargo test -- --color=always --test-threads=1
+
+test_debug:
 	@RUST_BACKTRACE=1 cargo test -- --color=always --test-threads=1 --nocapture
 
 lint:

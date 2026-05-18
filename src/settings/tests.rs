@@ -35,6 +35,7 @@ fn test_01_check_constructor() {
 
 #[test]
 fn test_02_check_load() {
+    println!();
     let tmp = env::temp_dir().join(Uuid::new_v4().to_string());
     let content = r#"age: 18
 name: Name
@@ -47,6 +48,7 @@ name: Name
 
 #[test]
 fn test_03_check_saves() {
+    println!();
     let mut settings = Settings::<ConfigBean>::default();
     settings.set_age(18);
     settings.set_name("Name");
