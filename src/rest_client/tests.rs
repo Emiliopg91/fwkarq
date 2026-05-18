@@ -2,34 +2,36 @@ use crate::rest_client::{HttpMethod, RestClient, error::RestClientError};
 
 #[test]
 pub fn test_01_get() {
-    println!("");
-    RestClient::new("https://jsonplaceholder.typicode.com/todos/1")
+    println!();
+    let response = RestClient::new("https://jsonplaceholder.typicode.com/todos/1")
         .invoke()
         .unwrap();
+    assert!(response.status >= 200 && response.status < 400)
 }
 
 #[test]
 pub fn test_02_post() {
-    println!("");
-    RestClient::new("https://jsonplaceholder.typicode.com/posts")
+    println!();
+    let response = RestClient::new("https://jsonplaceholder.typicode.com/posts")
         .method(HttpMethod::POST)
         .header("Content-Type", "application/json")
         .unwrap()
         .body(
             r#"{
-    "title": "hola",
-    "body": "esto es una prueba",
+    "title": "Test post",
+    "body": "This is a test post",
     "userId": 1
-}"#
-            .to_string(),
+}"#,
         )
         .invoke()
         .unwrap();
+
+    assert!(response.status >= 200 && response.status < 400)
 }
 
 #[test]
 pub fn test_03_bad_header() {
-    println!("");
+    println!();
 
     if let Some(e) = RestClient::new("https://jsonplaceholder.typicode.com/posts")
         .header("Content Type", "application/json")
@@ -40,7 +42,7 @@ pub fn test_03_bad_header() {
                 //OK!!
             }
             _ => {
-                assert!(false, "Expected InvalidRequestHeader error, {} found", e)
+                panic!("Expected InvalidRequestHeader error, {} found", e)
             }
         }
     } else {
