@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 
 use crate::{
     serialization::{Serializer, yaml::YamlSerializer},
@@ -6,7 +6,7 @@ use crate::{
     utils::file::FileUtils,
 };
 
-fn initialize() -> PathBuf {
+fn initialize() {
     let path = FileUtils::new_tmp_file().unwrap();
     let content: HashMap<&str, HashMap<&str, &str>> = HashMap::from([
         ("lit1", HashMap::from([("en", "Hello")])),
@@ -15,22 +15,20 @@ fn initialize() -> PathBuf {
 
     YamlSerializer::serialize_to_file(&content, &path).unwrap();
 
-    path
+    Translator::initialize(path).unwrap();
 }
 
 #[test]
 fn test_01_initialization() {
-    Translator::new(initialize()).unwrap();
+    initialize();
 }
 
 #[test]
 fn test_02_translate() {
-    let translator = Translator::new(initialize()).unwrap();
-    assert!(translator.translate("lit1") != "lit1");
+    assert!(Translator::translate("lit1") != "lit1");
 }
 
 #[test]
 fn test_03_translate_with_data() {
-    let translator = Translator::new(initialize()).unwrap();
-    assert!(translator.translate_with_data("lit2", ["1", "2"]) == "Value: 1-2");
+    assert!(Translator::translate_with_data("lit2", ["1", "2"]) == "Value: 1-2");
 }

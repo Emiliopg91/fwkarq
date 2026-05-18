@@ -3,12 +3,14 @@ mod tests;
 
 pub mod error;
 
-use std::{collections::HashMap, env, iter, path::Path};
+use std::{collections::HashMap, env, iter, path::Path, sync::OnceLock};
 
 use crate::{
     serialization::{Serializer, yaml::YamlSerializer},
     translator::error::{Result, TranslationError},
 };
+
+static TRANSLATOR: OnceLock<Translator> = OnceLock::new();
 
 pub struct Translator {
     msg_map: HashMap<String, String>,
@@ -17,7 +19,7 @@ pub struct Translator {
 impl Translator {
     const DEFAULT_LANG: &str = "en";
 
-    pub fn new<T>(file_path: T) -> Result<Self>
+    pub fn initialize<T>(file_path: T) -> Result<()>
     where
         T: AsRef<Path>,
     {
@@ -47,26 +49,34 @@ impl Translator {
             msg_map.insert(key.clone(), literal.unwrap().clone());
         }
 
-        Ok(Self { msg_map })
+        let inst = Self { msg_map };
+        TRANSLATOR.get_or_init(|| inst);
+        Ok(())
     }
 
-    pub fn translate<K: AsRef<str>>(&self, key: K) -> String {
-        self.translate_with_data(key, iter::empty::<String>())
+    pub fn translate<K: AsRef<str>>(key: K) -> String {
+        Self::translate_with_data(key, iter::empty::<String>())
     }
 
-    pub fn translate_with_data<K, D, I>(&self, key: K, data: I) -> String
+    pub fn translate_with_data<K, D, I>(key: K, data: I) -> String
     where
         K: AsRef<str>,
         I: IntoIterator<Item = D>,
         D: AsRef<str>,
     {
+        let translator = TRANSLATOR.get().unwrap();
+
         let key = key.as_ref();
 
-        if !self.msg_map.contains_key(key) {
+        if !translator.msg_map.contains_key(key) {
             return key.to_string();
         }
 
-        let mut result = self.msg_map.get(key).unwrap_or(&key.to_string()).to_owned();
+        let mut result = translator
+            .msg_map
+            .get(key)
+            .unwrap_or(&key.to_string())
+            .to_owned();
 
         for item in data {
             result = result.replacen("{}", item.as_ref(), 1);
