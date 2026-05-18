@@ -33,4 +33,6 @@ fn test_03_pattern_management() {
     Provider::set_pattern(NEW_PATTERN);
     assert!(Provider::get_logger(LOGGER_NAME1).get_pattern() == def_pattern);
     assert!(Provider::get_logger(LOGGER_NAME2).get_pattern() == NEW_PATTERN);
+
+    Provider::set_pattern(&def_pattern);
 }
