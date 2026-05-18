@@ -1,17 +1,23 @@
 #[cfg(test)]
 mod tests;
 
-use std::{collections::HashMap, time::Instant};
+use std::{
+    collections::HashMap,
+    sync::{Arc, LazyLock},
+    time::Instant,
+};
 
 use reqwest::{
     Method,
     blocking::Client,
     header::{HeaderMap, HeaderName, HeaderValue},
 };
+use serde::Serialize;
 
 use crate::{
-    logger::provider::Provider,
+    logger::{Logger, provider::Provider},
     rest_client::error::{RestClientError, Result},
+    serialization::{Serializer, json::JsonSerializer},
 };
 pub mod error;
 
@@ -52,6 +58,8 @@ pub struct RestResponse {
     pub headers: HashMap<String, String>,
     pub body: String,
 }
+
+static LOGGER: LazyLock<Arc<Logger>> = LazyLock::new(|| Provider::get_logger("RestClient"));
 
 impl RestClient {
     pub fn new<U>(url: &U) -> Self
@@ -98,6 +106,18 @@ impl RestClient {
         self
     }
 
+    pub fn json<B>(mut self, body: B) -> Result<Self>
+    where
+        B: Serialize,
+    {
+        self.body = Some(
+            JsonSerializer::serialize(&body)
+                .map_err(RestClientError::RequestBodySerializationError)?,
+        );
+
+        Ok(self)
+    }
+
     pub fn invoke(self) -> Result<RestResponse> {
         let client = Client::new();
 
@@ -140,13 +160,12 @@ impl RestClient {
     }
 
     fn log_request(&self) {
-        let logger = Provider::get_logger("RestClient");
-        logger.info("Starting REST request");
-        logger.info(&format!("  Method: {:?}", self.method));
-        logger.info(&format!("  URL: {}", self.url));
-        logger.info(&format!("  Headers: {:?}", self.headers));
+        LOGGER.info("Starting REST request");
+        LOGGER.info(format!("  Method: {:?}", self.method));
+        LOGGER.info(format!("  URL: {}", self.url));
+        LOGGER.info(format!("  Headers: {:?}", self.headers));
         if self.method.has_body() && self.body.is_some() {
-            logger.info(&format!("  Body:  {}", self.body.clone().unwrap()))
+            LOGGER.info(format!("  Body:  {}", self.body.clone().unwrap()))
         }
     }
 
@@ -157,10 +176,9 @@ impl RestClient {
         body: &str,
         headers: &HashMap<String, String>,
     ) {
-        let logger = Provider::get_logger("RestClient");
-        logger.info(&format!("Response received after {:.3}s:", elapsed));
-        logger.info(&format!("  Status: {}", status));
-        logger.info(&format!("  Headers: {:?}", headers));
-        logger.info(&format!("  Body: {}", body));
+        LOGGER.info(format!("Response received after {:.3}s:", elapsed));
+        LOGGER.info(format!("  Status: {}", status));
+        LOGGER.info(format!("  Headers: {:?}", headers));
+        LOGGER.info(format!("  Body: {}", body));
     }
 }

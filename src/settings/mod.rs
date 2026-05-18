@@ -6,11 +6,13 @@ pub mod errors;
 use std::{
     ops::{Deref, DerefMut},
     path::{Path, PathBuf},
+    sync::{Arc, LazyLock},
 };
 
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
+    logger::{Logger, provider::Provider},
     serialization::{Serializer, yaml::YamlSerializer},
     settings::errors::{Result, SettingsError},
     utils::file::FileUtils,
@@ -44,11 +46,14 @@ where
     }
 }
 
+static LOGGER: LazyLock<Arc<Logger>> = LazyLock::new(|| Provider::get_logger("Settings"));
+
 impl<T> Settings<T>
 where
     T: Default + Serialize + DeserializeOwned,
 {
     pub fn load(file_path: &PathBuf) -> Result<Self> {
+        LOGGER.info(format!("Loading settings from {}", file_path.display()));
         let content = FileUtils::read(file_path)
             .map_err(|e| SettingsError::LoadError(file_path.to_path_buf(), Box::new(e)))?;
         Ok(Self {

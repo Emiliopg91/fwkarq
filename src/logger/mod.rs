@@ -103,23 +103,38 @@ impl Logger {
         self.level <= level
     }
 
-    pub fn debug(&self, message: &str) {
+    pub fn debug<T>(&self, message: T)
+    where
+        T: AsRef<str>,
+    {
         self.log(message, Level::DEBUG);
     }
 
-    pub fn info(&self, message: &str) {
+    pub fn info<T>(&self, message: T)
+    where
+        T: AsRef<str>,
+    {
         self.log(message, Level::INFO);
     }
 
-    pub fn warning(&self, message: &str) {
+    pub fn warning<T>(&self, message: T)
+    where
+        T: AsRef<str>,
+    {
         self.log(message, Level::WARNING);
     }
 
-    pub fn error(&self, message: &str) {
+    pub fn error<T>(&self, message: T)
+    where
+        T: AsRef<str>,
+    {
         self.log(message, Level::ERROR);
     }
 
-    pub fn critical(&self, message: &str) {
+    pub fn critical<T>(&self, message: T)
+    where
+        T: AsRef<str>,
+    {
         self.log(message, Level::CRITICAL);
     }
 
@@ -131,11 +146,16 @@ impl Logger {
         formatted
     }
 
-    fn log(&self, message: &str, level: Level) {
+    fn log<T>(&self, message: T, level: Level)
+    where
+        T: AsRef<str>,
+    {
         if self.is_level_enabled(level) {
             for sink in &self.sinks {
-                sink.as_ref()
-                    .sink_message(&self.format_message(message, &self.name, level), level);
+                sink.as_ref().sink_message(
+                    &self.format_message(message.as_ref(), &self.name, level),
+                    level,
+                );
             }
         }
     }

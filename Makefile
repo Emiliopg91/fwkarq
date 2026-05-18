@@ -1,12 +1,12 @@
-clean:
-	@cargo clean
-	@rm -Rf target
-
 test:
-	@RUST_BACKTRACE=1 cargo test -- --color=always --test-threads=1
+	@RUST_BACKTRACE=1 cargo test -- --color=always --test-threads=1 --nocapture
 
 lint:
 	@cargo clippy --all-targets
+
+clean:
+	@cargo clean
+	@rm -Rf target
 
 update:
 	@if [[ -n $$(git status --porcelain) ]]; then \

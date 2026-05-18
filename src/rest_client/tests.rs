@@ -2,7 +2,6 @@ use crate::rest_client::{HttpMethod, RestClient, error::RestClientError};
 
 #[test]
 pub fn test_01_get() {
-    println!();
     let response = RestClient::new("https://jsonplaceholder.typicode.com/todos/1")
         .invoke()
         .unwrap();
@@ -11,7 +10,6 @@ pub fn test_01_get() {
 
 #[test]
 pub fn test_02_post() {
-    println!();
     let response = RestClient::new("https://jsonplaceholder.typicode.com/posts")
         .method(HttpMethod::POST)
         .header("Content-Type", "application/json")
@@ -31,8 +29,6 @@ pub fn test_02_post() {
 
 #[test]
 pub fn test_03_bad_header() {
-    println!();
-
     if let Some(e) = RestClient::new("https://jsonplaceholder.typicode.com/posts")
         .header("Content Type", "application/json")
         .err()
