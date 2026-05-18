@@ -9,7 +9,7 @@ lint:
 	@cargo clippy --all-targets
 
 update:
-	@if [[ -n $$(git status --porcelain | wc -l) ]]; then \
+	@if [[ -n $$(git status --porcelain) ]]; then \
 		echo "Cannot update dependencies version on dirty workspace"; \
 	else \
 		cargo update; \
