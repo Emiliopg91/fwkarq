@@ -1,15 +1,16 @@
 use crate::rest_client::{HttpMethod, RestClient, error::RestClientError};
 
-#[test]
-pub fn test_01_get() {
+#[tokio::test]
+pub async fn test_01_get() {
     let response = RestClient::new("https://jsonplaceholder.typicode.com/todos/1")
         .invoke()
+        .await
         .unwrap();
     assert!(response.status >= 200 && response.status < 400)
 }
 
-#[test]
-pub fn test_02_post() {
+#[tokio::test]
+pub async fn test_02_post() {
     let response = RestClient::new("https://jsonplaceholder.typicode.com/posts")
         .method(HttpMethod::POST)
         .header("Content-Type", "application/json")
@@ -22,6 +23,7 @@ pub fn test_02_post() {
 }"#,
         )
         .invoke()
+        .await
         .unwrap();
 
     assert!(response.status >= 200 && response.status < 400)

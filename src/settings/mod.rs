@@ -74,7 +74,7 @@ where
         LOGGER.info(format!("Saving settings to {}...", file_path.display()));
         let content = YamlSerializer::serialize(&self.value)
             .map_err(|e| SettingsError::SaveError(file_path.to_path_buf(), Box::new(e)))?;
-        FileUtils::write(file_path, content)
+        FileUtils::write(file_path, &content)
             .map_err(|e| SettingsError::SaveError(file_path.to_path_buf(), Box::new(e)))?;
         Ok(())
     }

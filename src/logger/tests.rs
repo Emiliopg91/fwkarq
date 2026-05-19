@@ -1,4 +1,13 @@
-use crate::logger::{Logger, level::Level};
+use std::{sync::Arc, thread::sleep, time::Duration};
+
+use crate::{
+    logger::{
+        Logger,
+        level::Level,
+        sink::{Sink, file::FileSink},
+    },
+    utils::file::FileUtils,
+};
 
 const NAME: &str = "LoggerName";
 const LEVEL: Level = Level::INFO;
@@ -28,4 +37,19 @@ fn test_03_test_is_level_enabled() {
     assert!(logger.is_level_enabled(Level::CRITICAL));
     assert!(logger.is_level_enabled(logger.level));
     assert!(!logger.is_level_enabled(Level::DEBUG));
+}
+
+#[test]
+fn test_04_file_sink() {
+    let path = FileUtils::new_tmp_file().unwrap();
+
+    let mut logger = Logger::new(NAME, LEVEL, "[%d][%n][%l] - %m");
+    let filesink: Arc<dyn Sink + Send + Sync> =
+        Arc::new(FileSink::new(&path, logger.level, 0).unwrap());
+
+    logger.set_sinks(vec![filesink]);
+
+    logger.info("Hello world");
+    sleep(Duration::from_millis(100));
+    assert!(FileUtils::read(&path).unwrap().contains("Hello world"))
 }

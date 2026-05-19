@@ -8,8 +8,7 @@ use std::{
 };
 
 use reqwest::{
-    Method,
-    blocking::Client,
+    Client, Method,
     header::{HeaderMap, HeaderName, HeaderValue},
 };
 use serde::Serialize;
@@ -118,7 +117,7 @@ impl RestClient {
         Ok(self)
     }
 
-    pub fn invoke(self) -> Result<RestResponse> {
+    pub async fn invoke(self) -> Result<RestResponse> {
         let client = Client::new();
 
         let method = self.method.to_method();
@@ -136,6 +135,7 @@ impl RestClient {
         let t0 = Instant::now();
         let response = builder
             .send()
+            .await
             .map_err(|e| RestClientError::ErrorSendingRequest(self.url.clone(), Box::new(e)))?;
         let elapsed = t0.elapsed().as_secs_f64();
         let status = response.status().as_u16();
@@ -146,6 +146,7 @@ impl RestClient {
             .collect();
         let bytes = response
             .bytes()
+            .await
             .map_err(|e| RestClientError::ErrorReadingResponse(Box::new(e)))?;
         let body = std::str::from_utf8(&bytes)
             .map_err(|e| RestClientError::ErrorReadingResponse(Box::new(e)))?;

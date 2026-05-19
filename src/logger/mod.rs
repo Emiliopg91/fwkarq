@@ -5,6 +5,8 @@ pub mod sink;
 #[cfg(test)]
 mod tests;
 
+use std::sync::Arc;
+
 use chrono::Local;
 
 use crate::logger::{
@@ -17,7 +19,7 @@ type TokenFn = fn(message: &str, name: &str, level: Level) -> String;
 pub struct Logger {
     name: String,
     level: Level,
-    sinks: Vec<Box<dyn Sink>>,
+    sinks: Vec<Arc<dyn Sink + Send + Sync>>,
     pattern_orig: String,
     pattern: String,
     token_fn: Vec<TokenFn>,
@@ -71,15 +73,15 @@ impl Logger {
             pattern: pattern_fmt,
             token_fn,
             level,
-            sinks: vec![Box::new(StdoutSink::new(level))],
+            sinks: vec![Arc::new(StdoutSink::new(level))],
         }
     }
 
-    pub fn get_sinks(&self) -> &Vec<Box<dyn Sink>> {
-        self.sinks.as_ref()
+    pub fn get_sinks(&self) -> Vec<Arc<dyn Sink + Send + Sync>> {
+        self.sinks.clone()
     }
 
-    pub fn set_sinks(&mut self, sinks: Vec<Box<dyn Sink>>) {
+    pub fn set_sinks(&mut self, sinks: Vec<Arc<dyn Sink + Send + Sync>>) {
         self.sinks = sinks;
     }
 

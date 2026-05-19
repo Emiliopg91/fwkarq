@@ -91,7 +91,7 @@ impl FileUtils {
         Ok(())
     }
 
-    pub fn write<T, I>(path: T, content: I) -> Result<()>
+    pub fn write<T, I>(path: T, content: &I) -> Result<()>
     where
         T: AsRef<Path>,
         I: AsRef<[u8]>,
@@ -109,8 +109,12 @@ impl FileUtils {
     }
 
     pub fn new_tmp_file() -> Result<PathBuf> {
-        let app_name = env!("CARGO_PKG_NAME");
-        let tmp_path = env::temp_dir();
+        let mut tmp_path = env::temp_dir();
+        tmp_path.push(env!("CARGO_PKG_NAME"));
+        if !FileUtils::exists(&tmp_path) {
+            FileUtils::mkdir(&tmp_path, true).unwrap();
+        }
+
         let mut now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -118,7 +122,7 @@ impl FileUtils {
 
         loop {
             let random_suffix = (now as u64) ^ (now as u64).wrapping_mul(6364136223846793005);
-            let path_str = &format!("{}/{}_{}", tmp_path.display(), app_name, random_suffix);
+            let path_str = &format!("{}/{}", tmp_path.display(), random_suffix);
             let path = Path::new(path_str);
             if path.exists() {
                 now += 1;

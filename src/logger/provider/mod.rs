@@ -1,19 +1,24 @@
 #[cfg(test)]
 mod tests;
 
-use crate::logger::{Logger, level::Level};
+use crate::logger::{
+    Logger,
+    level::Level,
+    sink::{Sink, stdout::StdoutSink},
+};
 use std::{
     collections::HashMap,
-    sync::{Arc, OnceLock, RwLock},
+    sync::{Arc, LazyLock, RwLock},
 };
 
 pub struct Provider {
     default_level: Level,
     default_pattern: String,
+    default_sinks: Vec<Arc<dyn Sink + Send + Sync>>,
     logger_map: HashMap<String, Arc<Logger>>,
 }
 
-static PROVIDER: OnceLock<RwLock<Provider>> = OnceLock::new();
+static PROVIDER: LazyLock<RwLock<Provider>> = LazyLock::new(|| RwLock::new(Provider::new()));
 
 impl Provider {
     fn new() -> Self {
@@ -21,60 +26,58 @@ impl Provider {
             default_level: Level::INFO,
             logger_map: HashMap::new(),
             default_pattern: "[%d][%n][%l] - %m".to_string(),
+            default_sinks: vec![Arc::new(StdoutSink::new(Level::INFO))],
         }
     }
 
-    fn _get_logger(&mut self, logger_name: &str) -> Arc<Logger> {
-        self.logger_map
-            .entry(logger_name.to_string())
-            .or_insert_with(|| {
-                Arc::new(Logger::new(
-                    logger_name,
-                    self.default_level,
-                    &self.default_pattern,
-                ))
-            })
-            .clone()
+    pub fn get_logger(logger_name: &str) -> Arc<Logger> {
+        {
+            let r_prov = PROVIDER.read().unwrap();
+            if let Some(logger) = r_prov.logger_map.get(logger_name) {
+                return logger.clone();
+            }
+        }
+
+        let mut w_prov = PROVIDER.write().unwrap();
+
+        if let Some(logger) = w_prov.logger_map.get(logger_name) {
+            return logger.clone();
+        }
+
+        let inst = Arc::new(Logger::new(
+            logger_name,
+            w_prov.default_level,
+            &w_prov.default_pattern,
+        ));
+
+        w_prov
+            .logger_map
+            .insert(logger_name.to_string(), inst.clone());
+
+        return inst;
     }
 
-    pub fn get_logger(logger_name: &str) -> Arc<Logger> {
-        PROVIDER
-            .get_or_init(|| RwLock::new(Provider::new()))
-            .write()
-            .unwrap()
-            ._get_logger(logger_name)
+    pub fn get_sinks() -> Vec<Arc<dyn Sink + Send + Sync>> {
+        PROVIDER.read().unwrap().default_sinks.clone()
+    }
+
+    pub fn set_sinks(sinks: Vec<Arc<dyn Sink + Send + Sync>>) {
+        PROVIDER.write().unwrap().default_sinks = sinks;
     }
 
     pub fn get_level() -> Level {
-        PROVIDER
-            .get_or_init(|| RwLock::new(Provider::new()))
-            .write()
-            .unwrap()
-            .default_level
+        PROVIDER.read().unwrap().default_level
     }
 
     pub fn set_level(level: Level) {
-        PROVIDER
-            .get_or_init(|| RwLock::new(Provider::new()))
-            .write()
-            .unwrap()
-            .default_level = level;
+        PROVIDER.write().unwrap().default_level = level;
     }
 
     pub fn get_pattern() -> String {
-        PROVIDER
-            .get_or_init(|| RwLock::new(Provider::new()))
-            .write()
-            .unwrap()
-            .default_pattern
-            .clone()
+        PROVIDER.read().unwrap().default_pattern.clone()
     }
 
     pub fn set_pattern(pattern: &str) {
-        PROVIDER
-            .get_or_init(|| RwLock::new(Provider::new()))
-            .write()
-            .unwrap()
-            .default_pattern = pattern.to_string();
+        PROVIDER.write().unwrap().default_pattern = pattern.to_string();
     }
 }

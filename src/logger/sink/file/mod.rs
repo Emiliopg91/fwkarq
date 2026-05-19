@@ -1,8 +1,9 @@
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
 use std::path::Path;
-use std::sync::mpsc::{self, SyncSender};
+use std::sync::mpsc::{self, RecvTimeoutError, SyncSender};
 use std::thread::{self, JoinHandle};
+use std::time::{Duration, Instant};
 
 use crate::logger::level::Level;
 use crate::logger::sink::Sink;
@@ -14,23 +15,43 @@ pub struct FileSink {
 }
 
 impl FileSink {
-    pub fn new<T>(path: T, level: Level) -> std::io::Result<Self>
+    pub fn new<T>(path: &T, level: Level, flush_interval: u64) -> std::io::Result<Self>
     where
         T: AsRef<Path>,
     {
-        let file = OpenOptions::new().create(true).append(true).open(&path)?;
+        let file = OpenOptions::new().create(true).append(true).open(path)?;
 
         let (tx, rx) = mpsc::sync_channel(100);
         let tx = Some(tx);
 
         let path = path.as_ref().to_owned();
         let worker = Some(thread::spawn(move || {
+            const POLL_TIMEOUT: Duration = Duration::from_millis(100);
+            let flush_timeout: Duration = Duration::from_millis(flush_interval);
             let mut writer = BufWriter::new(file);
-            while let Ok(msg) = rx.recv() {
-                if let Err(e) = writeln!(writer, "{}", msg) {
-                    eprintln!("Error writing log to {}:\n  {}", path.display(), e)
-                } else {
+            let mut last_flush = Instant::now();
+            let mut pending_flush = false;
+
+            loop {
+                match rx.recv_timeout(POLL_TIMEOUT) {
+                    Ok(msg) => {
+                        if let Err(e) = writeln!(writer, "{}", msg) {
+                            eprintln!("Error writing log to {}:\n  {}", path.display(), e)
+                        } else {
+                            pending_flush = true;
+                        }
+                    }
+                    Err(RecvTimeoutError::Timeout) => {}
+                    Err(RecvTimeoutError::Disconnected) => {
+                        let _ = writer.flush();
+                        break;
+                    }
+                }
+
+                if pending_flush && (flush_interval == 0 || last_flush.elapsed() >= flush_timeout) {
                     let _ = writer.flush();
+                    last_flush = Instant::now();
+                    pending_flush = false;
                 }
             }
         }));

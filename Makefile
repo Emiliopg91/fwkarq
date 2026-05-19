@@ -1,8 +1,10 @@
 test:
 	@RUST_BACKTRACE=1 cargo test -- --color=always --test-threads=1
+	@rm -R /tmp/rust_framework
 
 test_debug:
 	@RUST_BACKTRACE=1 cargo test -- --color=always --test-threads=1 --nocapture
+	@rm -R /tmp/rust_framework
 
 lint:
 	@cargo clippy --all-targets
@@ -17,3 +19,6 @@ update:
 	else \
 		cargo update; \
 	fi
+
+build:
+	@cargo build
