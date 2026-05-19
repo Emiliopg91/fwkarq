@@ -1,6 +1,6 @@
 [package]
 name = "rust_framework"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]
@@ -17,3 +17,11 @@ toml = "^1"
 
 [lib]
 doctest = false
+crate-type = ["rlib", "cdylib"]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+panic = "unwind"
+opt-level = 3
