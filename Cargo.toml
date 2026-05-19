@@ -2,6 +2,8 @@
 name = "fwkarq"
 version = "1.0.0"
 edition = "2024"
+description = "Basic framework for project scaffolding"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 chrono = "^0"
