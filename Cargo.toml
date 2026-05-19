@@ -19,7 +19,6 @@ toml = "^1"
 
 [lib]
 doctest = false
-crate-type = ["rlib", "cdylib"]
 
 [profile.release]
 lto = "fat"
