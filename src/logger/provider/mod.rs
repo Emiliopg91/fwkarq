@@ -54,7 +54,7 @@ impl Provider {
             .logger_map
             .insert(logger_name.to_string(), inst.clone());
 
-        return inst;
+        inst
     }
 
     pub fn get_sinks() -> Vec<Arc<dyn Sink + Send + Sync>> {

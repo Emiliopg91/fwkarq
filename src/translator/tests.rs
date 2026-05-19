@@ -6,22 +6,24 @@ use crate::{
     utils::file::FileUtils,
 };
 
-fn initialize() {
+async fn initialize() {
     let path = FileUtils::new_tmp_file().unwrap();
     let content: HashMap<&str, HashMap<&str, &str>> = HashMap::from([
         ("lit1", HashMap::from([("en", "Hello")])),
         ("lit2", HashMap::from([("en", "Value: {}-{}")])),
     ]);
 
-    YamlSerializer::serialize_to_file(&content, &path).unwrap();
+    YamlSerializer::serialize_to_file(&content, &path)
+        .await
+        .unwrap();
 
-    Translator::initialize(path).unwrap();
+    Translator::initialize(path).await.unwrap();
 }
 
-#[test]
-fn test_01_initialization() {
+#[tokio::test]
+async fn test_01_initialization() {
     println!();
-    initialize();
+    initialize().await;
 }
 
 #[test]

@@ -32,26 +32,26 @@ fn test_01_check_constructor() {
     Settings::<ConfigBean>::default();
 }
 
-#[test]
-fn test_02_check_load() {
+#[tokio::test]
+async fn test_02_check_load() {
     println!();
     let tmp = FileUtils::new_tmp_file().unwrap();
     let content = r#"age: 18
 name: Name
 "#;
     fs::write(&tmp, content).unwrap();
-    let settings = Settings::<ConfigBean>::load(&tmp).unwrap();
+    let settings = Settings::<ConfigBean>::load(&tmp).await.unwrap();
     assert!(settings.age() == 18);
     assert!(settings.name() == "Name");
 }
 
-#[test]
-fn test_03_check_saves() {
+#[tokio::test]
+async fn test_03_check_saves() {
     println!();
     let mut settings = Settings::<ConfigBean>::default();
     settings.set_age(18);
     settings.set_name("Name");
 
     let tmp = FileUtils::new_tmp_file().unwrap();
-    settings.save(&tmp).unwrap();
+    settings.save(&tmp).await.unwrap();
 }

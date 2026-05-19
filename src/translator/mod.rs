@@ -16,7 +16,7 @@ use crate::{
     translator::error::{Result, TranslationError},
 };
 
-static TRANSLATOR: OnceLock<Translator> = OnceLock::new();
+static TRANSLATOR: OnceLock<Arc<Translator>> = OnceLock::new();
 static LOGGER: LazyLock<Arc<Logger>> = LazyLock::new(|| Provider::get_logger("Settings"));
 
 pub struct Translator {
@@ -26,16 +26,16 @@ pub struct Translator {
 impl Translator {
     const DEFAULT_LANG: &str = "en";
 
-    pub fn initialize<T>(file_path: T) -> Result<()>
+    pub async fn initialize<T>(file_path: T) -> Result<()>
     where
-        T: AsRef<Path>,
+        T: AsRef<Path> + Send + Sync,
     {
         let mut lang = env::var("LANG").unwrap_or(Self::DEFAULT_LANG.to_string());
         if lang == "C" {
             lang = Self::DEFAULT_LANG.to_string();
         }
         if lang.contains("_") {
-            lang = lang.splitn(2, "_").nth(0).unwrap().to_string();
+            lang = lang.split("_").nth(0).unwrap().to_string();
         }
 
         LOGGER.info(format!(
@@ -48,6 +48,7 @@ impl Translator {
             HashMap<String, HashMap<String, String>>,
             _,
         >(&file_path)
+        .await
         .map_err(|e| {
             TranslationError::ErrorLoadingFile(file_path.as_ref().display().to_string(), e)
         })?;
@@ -67,7 +68,7 @@ impl Translator {
         LOGGER.info(format!("Loaded {} translations", msg_map.len()));
 
         let inst = Self { msg_map };
-        TRANSLATOR.get_or_init(|| inst);
+        TRANSLATOR.get_or_init(|| Arc::new(inst));
         Ok(())
     }
 

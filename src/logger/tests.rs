@@ -39,8 +39,8 @@ fn test_03_test_is_level_enabled() {
     assert!(!logger.is_level_enabled(Level::DEBUG));
 }
 
-#[test]
-fn test_04_file_sink() {
+#[tokio::test]
+async fn test_04_file_sink() {
     let path = FileUtils::new_tmp_file().unwrap();
 
     let mut logger = Logger::new(NAME, LEVEL, "[%d][%n][%l] - %m");
@@ -51,5 +51,10 @@ fn test_04_file_sink() {
 
     logger.info("Hello world");
     sleep(Duration::from_millis(100));
-    assert!(FileUtils::read(&path).unwrap().contains("Hello world"))
+    assert!(
+        FileUtils::read(&path)
+            .await
+            .unwrap()
+            .contains("Hello world")
+    )
 }

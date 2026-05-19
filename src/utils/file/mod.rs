@@ -4,11 +4,14 @@ pub mod tests;
 pub mod errors;
 
 use std::{
-    env,
-    fs::{self, File, OpenOptions},
-    io::{self, Read, Write},
+    env, io,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
+};
+
+use tokio::{
+    fs::{self, File, OpenOptions},
+    io::{AsyncReadExt, AsyncWriteExt},
 };
 
 use crate::utils::file::errors::{FileError, Result};
@@ -45,9 +48,9 @@ impl FileUtils {
 
         type RemoveFn = fn(&Path) -> io::Result<()>;
         let fn_pointer: Option<RemoveFn> = if path.is_file() {
-            Some(|p| fs::remove_file(p))
+            Some(|p| std::fs::remove_file(p))
         } else if path.is_dir() {
-            Some(|p| fs::remove_dir_all(p))
+            Some(|p| std::fs::remove_dir_all(p))
         } else {
             None
         };
@@ -59,13 +62,14 @@ impl FileUtils {
         }
     }
 
-    pub fn touch<T>(path: &T) -> Result<()>
+    pub async fn touch<T>(path: &T) -> Result<()>
     where
         T: AsRef<Path>,
     {
         let path = path.as_ref();
         if !Self::exists(&path) {
             let _ = fs::File::create_new(path)
+                .await
                 .map_err(|e| FileError::FileTouchError(path.to_path_buf(), e));
         } else {
             filetime::set_file_mtime(path, filetime::FileTime::now())
@@ -81,9 +85,9 @@ impl FileUtils {
     {
         type MkDirFn = fn(&Path) -> io::Result<()>;
         let fn_pointer: Option<MkDirFn> = if parents {
-            Some(|p| fs::create_dir_all(p))
+            Some(|p| std::fs::create_dir_all(p))
         } else {
-            Some(|p| fs::create_dir(p))
+            Some(|p| std::fs::create_dir(p))
         };
 
         if let Some(f) = fn_pointer {
@@ -93,36 +97,40 @@ impl FileUtils {
         Ok(())
     }
 
-    pub fn write<T, I>(path: &T, append: bool, content: &I) -> Result<()>
+    pub async fn write<T, I>(path: &T, append: bool, content: &I) -> Result<()>
     where
         T: AsRef<Path>,
         I: AsRef<[u8]>,
     {
-        let mut file = FileUtils::open_file(&path, false, true, append, true)?;
+        let mut file = FileUtils::open_file(&path, false, true, append, true).await?;
         file.write_all(content.as_ref())
+            .await
             .map_err(|e| FileError::FileWriteError(path.as_ref().to_path_buf(), Box::new(e)))?;
         file.flush()
+            .await
             .map_err(|e| FileError::FileWriteError(path.as_ref().to_path_buf(), Box::new(e)))?;
 
         Ok(())
     }
 
-    pub fn read<T>(path: T) -> Result<String>
+    pub async fn read<T>(path: T) -> Result<String>
     where
         T: AsRef<Path>,
     {
         let mut file = FileUtils::open_file(&path, true, false, false, false)
+            .await
             .map_err(|e| FileError::FileReadError(path.as_ref().to_path_buf(), Box::new(e)))?;
 
         let mut buf = String::new();
 
         file.read_to_string(&mut buf)
+            .await
             .map_err(|e| FileError::FileReadError(path.as_ref().to_path_buf(), Box::new(e)))?;
 
         Ok(buf)
     }
 
-    pub fn open_file<T>(
+    pub async fn open_file<T>(
         path: &T,
         read: bool,
         write: bool,
@@ -147,6 +155,7 @@ impl FileUtils {
 
         options
             .open(path.as_ref())
+            .await
             .map_err(|e| FileError::OpenFileError(path.as_ref().display().to_string(), e))
     }
 

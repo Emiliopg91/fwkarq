@@ -52,13 +52,14 @@ impl<T> Settings<T>
 where
     T: Default + Serialize + DeserializeOwned,
 {
-    pub fn load<P>(file_path: &P) -> Result<Self>
+    pub async fn load<P>(file_path: &P) -> Result<Self>
     where
         P: AsRef<Path>,
     {
         let file_path = file_path.as_ref();
         LOGGER.info(format!("Loading settings from {}...", file_path.display()));
         let content = FileUtils::read(file_path)
+            .await
             .map_err(|e| SettingsError::LoadError(file_path.to_path_buf(), Box::new(e)))?;
         Ok(Self {
             value: YamlSerializer::deserialize(&content)
@@ -66,7 +67,7 @@ where
         })
     }
 
-    pub fn save<P>(&self, file_path: &P) -> Result<()>
+    pub async fn save<P>(&self, file_path: &P) -> Result<()>
     where
         P: AsRef<Path>,
     {
@@ -75,6 +76,7 @@ where
         let content = YamlSerializer::serialize(&self.value)
             .map_err(|e| SettingsError::SaveError(file_path.to_path_buf(), Box::new(e)))?;
         FileUtils::write(&file_path, false, &content)
+            .await
             .map_err(|e| SettingsError::SaveError(file_path.to_path_buf(), Box::new(e)))?;
         Ok(())
     }

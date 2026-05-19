@@ -1,3 +1,4 @@
+pub mod event_bus;
 pub mod logger;
 pub mod rest_client;
 pub mod serialization;
