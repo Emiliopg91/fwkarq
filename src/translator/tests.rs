@@ -20,6 +20,7 @@ fn initialize() {
 
 #[test]
 fn test_01_initialization() {
+    println!();
     initialize();
 }
 

@@ -20,7 +20,7 @@ pub trait Serializer {
 
     fn serialize_to_file<P: AsRef<std::path::Path>, S: Serialize>(obj: &S, path: &P) -> Result<()> {
         let content = Self::serialize(obj)?;
-        FileUtils::write(path, &content)
+        FileUtils::write(path, false, &content)
             .map_err(|e| SerializationError::MarshallError(Self::get_type(), Box::new(e)))
     }
     fn deserialize_from_file<T: DeserializeOwned, P: AsRef<std::path::Path>>(

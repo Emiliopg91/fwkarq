@@ -44,6 +44,7 @@ impl FileSink {
                     Err(RecvTimeoutError::Timeout) => {}
                     Err(RecvTimeoutError::Disconnected) => {
                         let _ = writer.flush();
+                        drop(writer);
                         break;
                     }
                 }

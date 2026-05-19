@@ -1,9 +1,9 @@
 test:
-	@RUST_BACKTRACE=1 cargo test -- --color=always --test-threads=1
+	@RUST_BACKTRACE=full cargo test -- --color=always --test-threads=1
 	@rm -R /tmp/rust_framework
 
 test_debug:
-	@RUST_BACKTRACE=1 cargo test -- --color=always --test-threads=1 --nocapture
+	@RUST_BACKTRACE=full cargo test -- --color=always --test-threads=1 --nocapture
 	@rm -R /tmp/rust_framework
 
 lint:

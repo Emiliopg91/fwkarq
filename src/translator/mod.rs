@@ -3,14 +3,21 @@ mod tests;
 
 pub mod error;
 
-use std::{collections::HashMap, env, iter, path::Path, sync::OnceLock};
+use std::{
+    collections::HashMap,
+    env, iter,
+    path::Path,
+    sync::{Arc, LazyLock, OnceLock},
+};
 
 use crate::{
+    logger::{Logger, provider::Provider},
     serialization::{Serializer, yaml::YamlSerializer},
     translator::error::{Result, TranslationError},
 };
 
 static TRANSLATOR: OnceLock<Translator> = OnceLock::new();
+static LOGGER: LazyLock<Arc<Logger>> = LazyLock::new(|| Provider::get_logger("Settings"));
 
 pub struct Translator {
     msg_map: HashMap<String, String>,
@@ -27,6 +34,15 @@ impl Translator {
         if lang == "C" {
             lang = Self::DEFAULT_LANG.to_string();
         }
+        if lang.contains("_") {
+            lang = lang.splitn(2, "_").nth(0).unwrap().to_string();
+        }
+
+        LOGGER.info(format!(
+            "Initializing translator for {} from {}...",
+            lang.to_uppercase(),
+            file_path.as_ref().display()
+        ));
 
         let content_mapped = YamlSerializer::deserialize_from_file::<
             HashMap<String, HashMap<String, String>>,
@@ -48,6 +64,7 @@ impl Translator {
             }
             msg_map.insert(key.clone(), literal.unwrap().clone());
         }
+        LOGGER.info(format!("Loaded {} translations", msg_map.len()));
 
         let inst = Self { msg_map };
         TRANSLATOR.get_or_init(|| inst);

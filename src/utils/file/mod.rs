@@ -4,7 +4,9 @@ pub mod tests;
 pub mod errors;
 
 use std::{
-    env, fs, io,
+    env,
+    fs::{self, File, OpenOptions},
+    io::{self, Read, Write},
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -14,28 +16,28 @@ use crate::utils::file::errors::{FileError, Result};
 pub struct FileUtils;
 
 impl FileUtils {
-    pub fn exists<T>(path: T) -> bool
+    pub fn exists<T>(path: &T) -> bool
     where
         T: AsRef<Path>,
     {
         path.as_ref().exists()
     }
 
-    pub fn is_file<T>(path: T) -> bool
+    pub fn is_file<T>(path: &T) -> bool
     where
         T: AsRef<Path>,
     {
         path.as_ref().is_file()
     }
 
-    pub fn is_dir<T>(path: T) -> bool
+    pub fn is_dir<T>(path: &T) -> bool
     where
         T: AsRef<Path>,
     {
         path.as_ref().is_dir()
     }
 
-    pub fn delete<T>(path: T) -> Result<()>
+    pub fn delete<T>(path: &T) -> Result<()>
     where
         T: AsRef<Path>,
     {
@@ -57,12 +59,12 @@ impl FileUtils {
         }
     }
 
-    pub fn touch<T>(path: T) -> Result<()>
+    pub fn touch<T>(path: &T) -> Result<()>
     where
         T: AsRef<Path>,
     {
         let path = path.as_ref();
-        if !Self::exists(path) {
+        if !Self::exists(&path) {
             let _ = fs::File::create_new(path)
                 .map_err(|e| FileError::FileTouchError(path.to_path_buf(), e));
         } else {
@@ -73,7 +75,7 @@ impl FileUtils {
         Ok(())
     }
 
-    pub fn mkdir<T>(path: T, parents: bool) -> Result<()>
+    pub fn mkdir<T>(path: &T, parents: bool) -> Result<()>
     where
         T: AsRef<Path>,
     {
@@ -91,21 +93,61 @@ impl FileUtils {
         Ok(())
     }
 
-    pub fn write<T, I>(path: T, content: &I) -> Result<()>
+    pub fn write<T, I>(path: &T, append: bool, content: &I) -> Result<()>
     where
         T: AsRef<Path>,
         I: AsRef<[u8]>,
     {
-        fs::write(path.as_ref(), content.as_ref())
-            .map_err(|e| FileError::FileWriteError(path.as_ref().to_path_buf(), e))
+        let mut file = FileUtils::open_file(&path, false, true, append, true)?;
+        file.write_all(content.as_ref())
+            .map_err(|e| FileError::FileWriteError(path.as_ref().to_path_buf(), Box::new(e)))?;
+        file.flush()
+            .map_err(|e| FileError::FileWriteError(path.as_ref().to_path_buf(), Box::new(e)))?;
+
+        Ok(())
     }
 
     pub fn read<T>(path: T) -> Result<String>
     where
         T: AsRef<Path>,
     {
-        fs::read_to_string(path.as_ref())
-            .map_err(|e| FileError::FileReadError(path.as_ref().to_path_buf(), e))
+        let mut file = FileUtils::open_file(&path, true, false, false, false)
+            .map_err(|e| FileError::FileReadError(path.as_ref().to_path_buf(), Box::new(e)))?;
+
+        let mut buf = String::new();
+
+        file.read_to_string(&mut buf)
+            .map_err(|e| FileError::FileReadError(path.as_ref().to_path_buf(), Box::new(e)))?;
+
+        Ok(buf)
+    }
+
+    pub fn open_file<T>(
+        path: &T,
+        read: bool,
+        write: bool,
+        append: bool,
+        create: bool,
+    ) -> Result<File>
+    where
+        T: AsRef<Path>,
+    {
+        let mut options = OpenOptions::new();
+        let mut options = options.read(read).write(write);
+        if write {
+            if append {
+                options = options.append(true);
+            } else {
+                options = options.truncate(true);
+            }
+        }
+        if create {
+            options = options.create_new(true);
+        }
+
+        options
+            .open(path.as_ref())
+            .map_err(|e| FileError::OpenFileError(path.as_ref().display().to_string(), e))
     }
 
     pub fn new_tmp_file() -> Result<PathBuf> {

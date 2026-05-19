@@ -11,9 +11,9 @@ pub enum FileError {
     #[error("Could not create directory '{0}':\n  {1}")]
     MakeDirError(PathBuf, std::io::Error),
     #[error("Could not write content to {0}:\n  {1}")]
-    FileWriteError(PathBuf, std::io::Error),
+    FileWriteError(PathBuf, Box<dyn std::error::Error>),
     #[error("Could not read content from {0}:\n  {1}")]
-    FileReadError(PathBuf, std::io::Error),
+    FileReadError(PathBuf, Box<dyn std::error::Error>),
     #[error("Could not create tmp file:\n  {0}")]
     TmpFileError(std::io::Error),
     #[error("Could not open file '{0}':\n  {1}")]
