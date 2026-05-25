@@ -85,7 +85,7 @@ impl Shell {
         let program = program.as_ref().to_string_lossy().to_string();
 
         if program != "which" {
-            let map = COMMANDS.read().unwrap();
+            let map = COMMANDS.read().await;
             if let Some(v) = map.get(&program) {
                 if !v {
                     return Err(ShellError::CommandNotFound(program));
@@ -103,7 +103,7 @@ impl Shell {
                     .status
                     .success();
 
-                let mut map = COMMANDS.write().unwrap();
+                let mut map = COMMANDS.write().await;
                 map.insert(program.clone(), success);
 
                 if !success {
