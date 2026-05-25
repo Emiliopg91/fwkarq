@@ -4,13 +4,15 @@ mod tests;
 pub mod errors;
 
 use std::{
+    collections::HashMap,
     env,
     ffi::OsStr,
     path::Path,
-    process::Command,
-    sync::{Arc, LazyLock},
+    sync::{Arc, LazyLock, RwLock},
     time::Instant,
 };
+
+use tokio::process::Command;
 
 use crate::{
     logger::{Logger, provider::Provider},
@@ -21,42 +23,44 @@ pub struct ShellOutput {
     pub status: i32,
     pub stdout: String,
     pub stderr: String,
-    pub elapsed: u128,
+    pub elapsed: f64,
 }
 
 static LOGGER: LazyLock<Arc<Logger>> = LazyLock::new(|| Provider::get_logger("Shell"));
+static COMMANDS: LazyLock<RwLock<HashMap<String, bool>>> =
+    LazyLock::new(|| RwLock::new(HashMap::new()));
 
 pub struct Shell {
     command: Command,
+    program: String,
+    args: Vec<String>,
 }
 
 impl Shell {
-    fn run_command(command: &mut Command, raise_if_not_0: bool) -> Result<ShellOutput> {
-        let mut cmd = command.get_program().to_string_lossy().to_string();
-        if command.get_args().len() > 0 {
-            cmd = format!(
-                "{} {}",
-                cmd,
-                command
-                    .get_args()
-                    .map(|s| s.to_string_lossy())
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            );
+    async fn run_command(shell: &mut Shell, raise_if_not_0: bool) -> Result<ShellOutput> {
+        let mut cmd = shell.program.clone();
+        if shell.args.len() > 0 {
+            cmd = format!("{} {}", cmd, shell.args.join(" "))
         }
+
+        Self::check_program_exists(&shell.program).await?;
 
         LOGGER.info(format!("Running command {}...", cmd));
         let t0 = Instant::now();
-        let res = command
+
+        let res = shell
+            .command
             .output()
+            .await
             .map_err(|e| ShellError::CommandFailed(cmd.clone(), e))?;
-        let elapsed = t0.elapsed().as_millis();
 
-        if res.status.code().is_none() {
-            return Err(ShellError::TerminatedBySignal(cmd.clone()));
-        }
+        let elapsed = t0.elapsed().as_secs_f64();
 
-        let status = res.status.code().unwrap();
+        let status = res
+            .status
+            .code()
+            .ok_or_else(|| ShellError::TerminatedBySignal(cmd.clone()))?;
+
         LOGGER.info(format!(
             "Execution finished after {:.3} with status {}",
             elapsed, status
@@ -66,24 +70,48 @@ impl Shell {
             return Err(ShellError::NonZeroStatus(cmd, status));
         }
 
-        let stderr = String::from_utf8_lossy(&res.stderr).to_string();
-        let stdout = String::from_utf8_lossy(&res.stdout).to_string();
-
         Ok(ShellOutput {
             status,
-            stderr,
-            stdout,
+            stderr: String::from_utf8_lossy(&res.stderr).to_string(),
+            stdout: String::from_utf8_lossy(&res.stdout).to_string(),
             elapsed,
         })
     }
 
-    pub fn check_program_exists<T>(program: T) -> Result<()>
+    pub async fn check_program_exists<T>(program: T) -> Result<()>
     where
         T: AsRef<OsStr>,
     {
-        Self::run_command(Command::new("which").arg(&program), true).map_err(|_| {
-            ShellError::CommandNotFound(program.as_ref().to_string_lossy().to_string())
-        })?;
+        let program = program.as_ref().to_string_lossy().to_string();
+
+        if program != "which" {
+            let map = COMMANDS.read().unwrap();
+            if let Some(v) = map.get(&program) {
+                if !v {
+                    return Err(ShellError::CommandNotFound(program));
+                } else {
+                    return Ok(());
+                }
+            } else {
+                drop(map);
+
+                let success = Command::new("which")
+                    .arg(&program)
+                    .output()
+                    .await
+                    .unwrap()
+                    .status
+                    .success();
+
+                let mut map = COMMANDS.write().unwrap();
+                map.insert(program.clone(), success);
+
+                if !success {
+                    return Err(ShellError::CommandNotFound(program.clone()));
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -91,11 +119,14 @@ impl Shell {
     where
         T: AsRef<OsStr>,
     {
-        Self::check_program_exists(program.as_ref())?;
-        let mut command = Command::new(program);
+        let mut command = Command::new(&program);
         command.current_dir(env::current_dir().map_err(ShellError::InvalidCurrentDir)?);
 
-        Ok(Self { command })
+        Ok(Self {
+            command,
+            program: program.as_ref().to_str().unwrap().to_string(),
+            args: Vec::new(),
+        })
     }
 
     pub fn cwd<T>(&mut self, working_dir: T) -> &mut Self
@@ -146,7 +177,7 @@ impl Shell {
         self
     }
 
-    pub fn run(&mut self, err_if_status_non_0: bool) -> Result<ShellOutput> {
-        Self::run_command(&mut self.command, err_if_status_non_0)
+    pub async fn run(&mut self, err_if_status_non_0: bool) -> Result<ShellOutput> {
+        Self::run_command(self, err_if_status_non_0).await
     }
 }
