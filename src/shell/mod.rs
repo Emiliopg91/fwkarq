@@ -141,7 +141,8 @@ impl Shell {
     where
         T: AsRef<OsStr>,
     {
-        self.command.arg(arg);
+        self.command.arg(&arg);
+        self.args.push(arg.as_ref().to_str().unwrap().to_owned());
         self
     }
 
