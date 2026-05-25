@@ -8,11 +8,11 @@ use std::{
     env,
     ffi::OsStr,
     path::Path,
-    sync::{Arc, LazyLock, RwLock},
+    sync::{Arc, LazyLock},
     time::Instant,
 };
 
-use tokio::process::Command;
+use tokio::{process::Command, sync::RwLock};
 
 use crate::{
     logger::{Logger, provider::Provider},
