@@ -24,7 +24,7 @@ impl Serializer for JsonSerializer {
     }
 
     fn serialize<T: Serialize>(obj: &T) -> Result<String> {
-        serde_json::to_string_pretty(obj)
+        serde_json::to_string(obj)
             .map_err(|e| SerializationError::MarshallError(Self::get_type(), Box::new(e)))
     }
 
