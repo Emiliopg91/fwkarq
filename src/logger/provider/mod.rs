@@ -16,6 +16,7 @@ pub struct Provider {
     default_pattern: String,
     default_sinks: Vec<Arc<dyn Sink + Send + Sync>>,
     logger_map: HashMap<String, Arc<Logger>>,
+    level_map: HashMap<String, Level>,
 }
 
 static PROVIDER: LazyLock<RwLock<Provider>> = LazyLock::new(|| RwLock::new(Provider::new()));
@@ -27,7 +28,13 @@ impl Provider {
             logger_map: HashMap::new(),
             default_pattern: "[%d][%n][%l] - %m".to_string(),
             default_sinks: vec![Arc::new(StdoutSink::new(Level::INFO))],
+            level_map: HashMap::new(),
         }
+    }
+
+    pub fn set_levels(levels: HashMap<String, Level>) {
+        let mut w_prov = PROVIDER.write().unwrap();
+        w_prov.level_map = levels.clone();
     }
 
     pub fn get_logger(logger_name: &str) -> Arc<Logger> {
@@ -44,11 +51,12 @@ impl Provider {
             return logger.clone();
         }
 
-        let inst = Arc::new(Logger::new(
-            logger_name,
-            w_prov.default_level,
-            &w_prov.default_pattern,
-        ));
+        let mut level = w_prov.default_level;
+        if let Some(lvl) = w_prov.level_map.get(logger_name) {
+            level = *lvl;
+        }
+
+        let inst = Arc::new(Logger::new(logger_name, level, &w_prov.default_pattern));
 
         w_prov
             .logger_map
