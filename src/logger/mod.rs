@@ -5,7 +5,7 @@ pub mod sink;
 #[cfg(test)]
 mod tests;
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use chrono::Local;
 
@@ -18,7 +18,7 @@ type TokenFn = fn(message: &str, name: &str, level: Level) -> String;
 
 pub struct Logger {
     name: String,
-    level: Level,
+    level: RwLock<Level>,
     sinks: Vec<Arc<dyn Sink + Send + Sync>>,
     pattern_orig: String,
     pattern: String,
@@ -72,7 +72,7 @@ impl Logger {
             pattern_orig: pattern.to_string(),
             pattern: pattern_fmt,
             token_fn,
-            level,
+            level: RwLock::new(level),
             sinks: vec![Arc::new(StdoutSink::new(level))],
         }
     }
@@ -94,15 +94,15 @@ impl Logger {
     }
 
     pub fn get_level(&self) -> Level {
-        self.level
+        *self.level.read().unwrap()
     }
 
     pub fn set_level(&mut self, level: Level) {
-        self.level = level
+        *self.level.write().unwrap() = level;
     }
 
     pub fn is_level_enabled(&self, level: Level) -> bool {
-        self.level <= level
+        *self.level.read().unwrap() <= level
     }
 
     pub fn debug<T>(&self, message: T)

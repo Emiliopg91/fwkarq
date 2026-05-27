@@ -39,7 +39,7 @@ pub struct Shell {
 impl Shell {
     async fn run_command(shell: &mut Shell, raise_if_not_0: bool) -> Result<ShellOutput> {
         let mut cmd = shell.program.clone();
-        if shell.args.len() > 0 {
+        if !shell.args.is_empty() {
             cmd = format!("{} {}", cmd, shell.args.join(" "))
         }
 

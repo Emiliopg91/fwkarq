@@ -35,7 +35,7 @@ fn test_02_test_set_level() {
 fn test_03_test_is_level_enabled() {
     let logger = initialize_logger();
     assert!(logger.is_level_enabled(Level::CRITICAL));
-    assert!(logger.is_level_enabled(logger.level));
+    assert!(logger.is_level_enabled(*logger.level.read().unwrap()));
     assert!(!logger.is_level_enabled(Level::DEBUG));
 }
 
@@ -45,7 +45,7 @@ async fn test_04_file_sink() {
 
     let mut logger = Logger::new(NAME, LEVEL, "[%d][%n][%l] - %m");
     let filesink: Arc<dyn Sink + Send + Sync> =
-        Arc::new(FileSink::new(&path, logger.level, 0).unwrap());
+        Arc::new(FileSink::new(&path, *logger.level.read().unwrap(), 0).unwrap());
 
     logger.set_sinks(vec![filesink]);
 
